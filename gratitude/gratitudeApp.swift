@@ -7,26 +7,23 @@
 
 import SwiftUI
 import SwiftData
+import UserNotifications
 
 @main
 struct gratitudeApp: App {
-    var sharedModelContainer: ModelContainer = {
-        let schema = Schema([
-            Item.self,
-        ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
 
-        do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
-        } catch {
-            fatalError("Could not create ModelContainer: \(error)")
-        }
-    }()
+    init() {
+        UNUserNotificationCenter.current().delegate = NotificationDelegate.shared
+        #if DEBUG
+        DebugSeeding.run(context: ModelContext(PersistenceController.shared))
+        #endif
+    }
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            HomeView()
         }
-        .modelContainer(sharedModelContainer)
+        .modelContainer(PersistenceController.shared)
     }
 }

@@ -1,0 +1,124 @@
+{
+  "morning": {
+    "quick": [
+      {
+        "id": "morning.focus",
+        "prompt": "What's your main focus today?",
+        "answerKind": "choiceOnly",
+        "options": ["Work", "Family", "Health", "Rest", "Creativity", "Connection", "Other"]
+      },
+      {
+        "id": "morning.feeling",
+        "prompt": "How do you want to feel by tonight?",
+        "answerKind": "choiceOnly",
+        "options": ["Calm", "Accomplished", "Connected", "Energized", "Grounded", "Proud"]
+      }
+    ],
+    "standard": [
+      {
+        "id": "morning.focus",
+        "prompt": "What's your main focus today?",
+        "answerKind": "choiceOrText",
+        "options": ["Work", "Family", "Health", "Rest", "Creativity", "Connection", "Other"]
+      },
+      {
+        "id": "morning.worthwhile",
+        "prompt": "What would make today feel worthwhile?",
+        "answerKind": "choiceOrText",
+        "options": [
+          "Getting something done",
+          "Time with people I care about",
+          "Taking care of myself",
+          "Learning something",
+          "Just getting through it"
+        ]
+      },
+      {
+        "id": "morning.feeling",
+        "prompt": "How do you want to feel by tonight?",
+        "answerKind": "choiceOnly",
+        "options": ["Calm", "Accomplished", "Connected", "Energized", "Grounded", "Proud"]
+      }
+    ],
+    "long": [
+      {
+        "id": "morning.focus",
+        "prompt": "What's your main focus today, and why does it matter?",
+        "answerKind": "textOnly"
+      },
+      {
+        "id": "morning.worthwhile",
+        "prompt": "What would make today feel worthwhile?",
+        "answerKind": "textOnly"
+      },
+      {
+        "id": "morning.weighing",
+        "prompt": "Anything weighing on you that you want to name before the day begins?",
+        "answerKind": "textOnly"
+      },
+      {
+        "id": "morning.feeling",
+        "prompt": "How do you want to feel by tonight?",
+        "answerKind": "choiceOnly",
+        "options": ["Calm", "Accomplished", "Connected", "Energized", "Grounded", "Proud"]
+      }
+    ]
+  },
+  "evening": {
+    "quick": [
+      {
+        "id": "evening.outcome",
+        "prompt": "Did today go the way you hoped with {morningFocus}?",
+        "answerKind": "choiceOnly",
+        "options": ["Yes", "Mostly", "Not really", "Didn't think about it"]
+      },
+      {
+        "id": "evening.positive",
+        "prompt": "One good thing about today?",
+        "answerKind": "choiceOnly",
+        "options": ["A conversation", "A small win", "A quiet moment", "Something I noticed", "Good food", "Nothing stands out"]
+      }
+    ],
+    "standard": [
+      {
+        "id": "evening.outcome",
+        "prompt": "You focused on {morningFocus} today — how did that go?",
+        "answerKind": "choiceOrText",
+        "options": ["Yes", "Mostly", "Not really", "Didn't think about it"]
+      },
+      {
+        "id": "evening.positive",
+        "prompt": "What was one positive thing about today?",
+        "answerKind": "choiceOrText",
+        "options": ["A conversation", "A small win", "A quiet moment", "Something I noticed", "Good food", "Nothing stands out"]
+      },
+      {
+        "id": "evening.mood",
+        "prompt": "How are you feeling right now?",
+        "answerKind": "scale"
+      }
+    ],
+    "long": [
+      {
+        "id": "evening.outcome",
+        "prompt": "This morning you wanted to feel {morningFeeling}. Did you get there? What helped or got in the way?",
+        "answerKind": "textOnly"
+      },
+      {
+        "id": "evening.positive",
+        "prompt": "What was one positive thing about today, and why did it stand out?",
+        "answerKind": "textOnly"
+      },
+      {
+        "id": "evening.letGo",
+        "prompt": "What's one thing you'd like to let go of before sleep?",
+        "answerKind": "textOnly"
+      },
+      {
+        "id": "evening.mood",
+        "prompt": "How are you feeling right now?",
+        "answerKind": "scale"
+      }
+    ]
+  }
+}
