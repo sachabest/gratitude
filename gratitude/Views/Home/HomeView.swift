@@ -5,6 +5,11 @@ struct HomeView: View {
     @Environment(\.scenePhase) private var scenePhase
     @Query(sort: \CheckIn.date, order: .reverse) private var checkIns: [CheckIn]
 
+    @AppStorage(SettingsKeys.morningWindowStart) private var morningWindowStart = CheckInWindowDefaults.morningStart
+    @AppStorage(SettingsKeys.morningWindowEnd) private var morningWindowEnd = CheckInWindowDefaults.morningEnd
+    @AppStorage(SettingsKeys.eveningWindowStart) private var eveningWindowStart = CheckInWindowDefaults.eveningStart
+    @AppStorage(SettingsKeys.eveningWindowEnd) private var eveningWindowEnd = CheckInWindowDefaults.eveningEnd
+
     @State private var path = NavigationPath()
     @State private var selectedDate = Calendar.current.startOfDay(for: .now)
     @State private var activeFlow: Period?
@@ -193,23 +198,24 @@ struct HomeView: View {
         )
     }
 
-    /// Morning's window closes at noon — after that, today's morning card locks
-    /// just like a past incomplete day, rather than staying open to start late.
-    private var isPastMorningWindow: Bool {
-        Calendar.current.component(.hour, from: .now) >= 12
+    private func windowState(for period: Period) -> CheckInWindowState {
+        switch period {
+        case .morning: CheckInWindow.state(start: morningWindowStart, end: morningWindowEnd)
+        case .evening: CheckInWindow.state(start: eveningWindowStart, end: eveningWindowEnd)
+        }
     }
 
     @ViewBuilder
     private func dayCard(for period: Period) -> some View {
         let checkIn = checkIns.first { $0.period == period && $0.date == selectedDate }
-        let isTimeLocked = period == .morning && isViewingToday && isPastMorningWindow
-        let canStart = isViewingToday && !isTimeLocked
+        let state = windowState(for: period)
+        let canStart = isViewingToday && state == .open
 
         StatusCardView(
             icon: period.symbolName,
             tint: period.tint,
             title: period.title,
-            subtitle: subtitle(for: period, checkIn: checkIn, isTimeLocked: isTimeLocked),
+            subtitle: subtitle(for: period, checkIn: checkIn, windowState: state),
             isComplete: checkIn != nil,
             isDisabled: checkIn == nil && !canStart
         ) {
@@ -221,25 +227,42 @@ struct HomeView: View {
         }
     }
 
-    private func subtitle(for period: Period, checkIn: CheckIn?, isTimeLocked: Bool) -> String {
+    private func subtitle(for period: Period, checkIn: CheckIn?, windowState: CheckInWindowState) -> String {
         if let checkIn {
             return checkIn.sortedResponses.first { $0.answerKindTag != .scale }?.displaySummary ?? "Completed"
         }
-        if isTimeLocked {
-            return "Missed this morning — see you tomorrow"
-        }
-        if isViewingToday {
+        guard isViewingToday else { return "Not completed" }
+
+        switch windowState {
+        case .tooLate:
+            return period == .morning ? "Missed this morning — see you tomorrow" : "Missed this evening — see you tomorrow"
+        case .tooEarly:
+            let opensAt = period == .morning ? morningWindowStart : eveningWindowStart
+            return "Opens at \(Self.timeLabel(secondsSinceMidnight: opensAt))"
+        case .open:
             return period == .morning ? "Set your intention for today" : "Reflect before you sleep"
         }
-        return "Not completed"
+    }
+
+    private static func timeLabel(secondsSinceMidnight: TimeInterval) -> String {
+        let date = Calendar.current.startOfDay(for: .now).addingTimeInterval(secondsSinceMidnight)
+        return date.formatted(date: .omitted, time: .shortened)
     }
 
     private func autoLaunchIfNeeded() {
         guard !hasAutoLaunched else { return }
         hasAutoLaunched = true
 
-        let hour = Calendar.current.component(.hour, from: .now)
-        let period: Period = hour < 12 ? .morning : .evening
+        let period: Period?
+        if windowState(for: .morning) == .open {
+            period = .morning
+        } else if windowState(for: .evening) == .open {
+            period = .evening
+        } else {
+            period = nil
+        }
+
+        guard let period else { return }
         let alreadyDone = checkIns.contains { $0.period == period && $0.date == today }
         if !alreadyDone {
             activeFlow = period

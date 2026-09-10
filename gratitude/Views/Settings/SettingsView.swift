@@ -12,6 +12,10 @@ struct SettingsView: View {
     @AppStorage(SettingsKeys.eveningReminderTime) private var eveningReminderSeconds: Double = 21 * 3600
     @AppStorage(SettingsKeys.cloudBackupEnabled) private var cloudBackupEnabled = false
     @AppStorage(SettingsKeys.userDisplayName) private var userDisplayName = ""
+    @AppStorage(SettingsKeys.morningWindowStart) private var morningWindowStart = CheckInWindowDefaults.morningStart
+    @AppStorage(SettingsKeys.morningWindowEnd) private var morningWindowEnd = CheckInWindowDefaults.morningEnd
+    @AppStorage(SettingsKeys.eveningWindowStart) private var eveningWindowStart = CheckInWindowDefaults.eveningStart
+    @AppStorage(SettingsKeys.eveningWindowEnd) private var eveningWindowEnd = CheckInWindowDefaults.eveningEnd
 
     @State private var iCloudStatusText = "Checking…"
     @State private var isSyncing = false
@@ -63,6 +67,24 @@ struct SettingsView: View {
                                 updateReminder(enabled: true, period: .evening)
                             }
                     }
+                }
+
+                Section {
+                    DatePicker("Opens", selection: morningWindowStartBinding, displayedComponents: .hourAndMinute)
+                    DatePicker("Closes", selection: morningWindowEndBinding, displayedComponents: .hourAndMinute)
+                } header: {
+                    Text("Morning window")
+                } footer: {
+                    Text("Today's Morning card is only tappable between these times.")
+                }
+
+                Section {
+                    DatePicker("Opens", selection: eveningWindowStartBinding, displayedComponents: .hourAndMinute)
+                    DatePicker("Closes", selection: eveningWindowEndBinding, displayedComponents: .hourAndMinute)
+                } header: {
+                    Text("Evening window")
+                } footer: {
+                    Text("A closing time earlier than the opening time means the window runs past midnight into the next morning — the default 8:00 PM to 2:00 AM, for example.")
                 }
 
                 Section {
@@ -174,6 +196,34 @@ struct SettingsView: View {
         Binding(
             get: { Self.date(fromSecondsSinceMidnight: eveningReminderSeconds) },
             set: { eveningReminderSeconds = Self.secondsSinceMidnight(from: $0) }
+        )
+    }
+
+    private var morningWindowStartBinding: Binding<Date> {
+        Binding(
+            get: { Self.date(fromSecondsSinceMidnight: morningWindowStart) },
+            set: { morningWindowStart = Self.secondsSinceMidnight(from: $0) }
+        )
+    }
+
+    private var morningWindowEndBinding: Binding<Date> {
+        Binding(
+            get: { Self.date(fromSecondsSinceMidnight: morningWindowEnd) },
+            set: { morningWindowEnd = Self.secondsSinceMidnight(from: $0) }
+        )
+    }
+
+    private var eveningWindowStartBinding: Binding<Date> {
+        Binding(
+            get: { Self.date(fromSecondsSinceMidnight: eveningWindowStart) },
+            set: { eveningWindowStart = Self.secondsSinceMidnight(from: $0) }
+        )
+    }
+
+    private var eveningWindowEndBinding: Binding<Date> {
+        Binding(
+            get: { Self.date(fromSecondsSinceMidnight: eveningWindowEnd) },
+            set: { eveningWindowEnd = Self.secondsSinceMidnight(from: $0) }
         )
     }
 
