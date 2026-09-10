@@ -60,11 +60,13 @@ enum SmileService {
         return PreparedShare(url: url, recordName: record.recordID.recordName)
     }
 
-    /// Prepares a `CKShare` (best-effort — falls back silently to a plain
-    /// message if CloudKit is unavailable, e.g. not signed into iCloud) and
-    /// records a local `Smile(direction: .sent)`, returning the message body
-    /// ready to hand to `MessageComposePresenter`. Shared by the check-in
-    /// flow's composer and Reflect's one-click resend so the two don't drift.
+    /// Prepares a `CKShare` (best-effort — falls back to a plain message,
+    /// plus `SmileInstallLink.cachedURL` if one's configured, if CloudKit is
+    /// unavailable, e.g. not signed into iCloud) and records a local
+    /// `Smile(direction: .sent)`, returning the message body ready to hand
+    /// to `MessageComposePresenter`. Shared by the check-in flow's composer,
+    /// Reflect's one-click resend, and the ad-hoc composer so none of the
+    /// three drift.
     static func composeSentSmile(personName: String, message: String, senderName: String, context: ModelContext) async -> String {
         var body = message
         do {
@@ -75,6 +77,9 @@ enum SmileService {
             try? context.save()
         } catch {
             logger.error("prepareShare failed, sending plain-text smile with no link: \(error as NSError, privacy: .public)")
+            if let installLink = SmileInstallLink.cachedURL {
+                body += "\n\n\(installLink)"
+            }
             let sent = Smile(direction: .sent, personName: personName, message: message)
             context.insert(sent)
             try? context.save()

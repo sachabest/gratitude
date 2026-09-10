@@ -15,6 +15,9 @@ struct gratitudeApp: App {
 
     init() {
         UNUserNotificationCenter.current().delegate = NotificationDelegate.shared
+        // Fire-and-forget: keeps AdHocSmileLimiter/SmileInstallLink's caches
+        // fresh regardless of which smile-sending entry point is used first.
+        Task { await AppConfigService.refresh() }
         #if DEBUG
         DebugSeeding.run(context: ModelContext(PersistenceController.shared))
         DebugActions.run(context: ModelContext(PersistenceController.shared))
