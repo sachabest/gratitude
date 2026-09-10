@@ -6,6 +6,7 @@ struct SmilesView: View {
     @Query(sort: \Smile.date, order: .reverse) private var smiles: [Smile]
 
     @State private var selectedDirection: SmileDirection = .sent
+    @State private var showAdHocComposer = false
 
     private var filtered: [Smile] {
         smiles.filter { $0.direction == selectedDirection }
@@ -52,9 +53,20 @@ struct SmilesView: View {
             .navigationTitle("Smiles")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        showAdHocComposer = true
+                    } label: {
+                        Image(systemName: "plus")
+                    }
+                    .accessibilityLabel("Send a smile")
+                }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
                 }
+            }
+            .sheet(isPresented: $showAdHocComposer) {
+                AdHocSmileComposerView()
             }
         }
     }
@@ -68,7 +80,7 @@ struct SmilesView: View {
                 .font(.headline)
             Text(
                 selectedDirection == .sent
-                    ? "Tag someone during an evening check-in to send one."
+                    ? "Tap + to send one anytime, or tag someone during an evening check-in."
                     : "When someone sends you a smile and you have Gratitude installed, it'll show up here."
             )
             .font(.subheadline)

@@ -18,6 +18,11 @@ enum SettingsKeys {
     static let morningWindowEnd = "morningWindowEnd"
     static let eveningWindowStart = "eveningWindowStart"
     static let eveningWindowEnd = "eveningWindowEnd"
+    /// Cached copy of `AppConfigService`'s remote `adHocSmileWeeklyLimit`,
+    /// so the ad-hoc smile flow has a value even offline/before first fetch.
+    static let adHocSmileWeeklyLimit = "adHocSmileWeeklyLimit"
+    static let adHocSmileCountThisWeek = "adHocSmileCountThisWeek"
+    static let adHocSmileWeekStartDate = "adHocSmileWeekStartDate"
 }
 
 enum CheckInWindowDefaults {
@@ -74,5 +79,52 @@ enum UserProfile {
         let stored = UserDefaults.standard.string(forKey: SettingsKeys.userDisplayName) ?? ""
         let trimmed = stored.trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.isEmpty ? UIDevice.current.name : trimmed
+    }
+}
+
+/// Local, calendar-week rate limit for the ad-hoc "send a smile anytime"
+/// flow (`Views/Smiles/AdHocSmileComposerView.swift`) — the smile-tag-
+/// during-a-check-in path and Reflect's one-click resend are unaffected,
+/// since both are already naturally bounded by real journal activity. The
+/// limit itself comes from `AppConfigService` (a CloudKit public-database
+/// record the developer can edit without shipping a build); this just
+/// tracks this week's usage against whatever that cached limit currently
+/// is. "This week" follows the user's `Calendar` (`.weekOfYear`), so it
+/// resets on whatever day their locale considers the start of the week.
+enum AdHocSmileLimiter {
+    private static let defaultWeeklyLimit = 3
+
+    static var cachedWeeklyLimit: Int {
+        get {
+            let defaults = UserDefaults.standard
+            return defaults.object(forKey: SettingsKeys.adHocSmileWeeklyLimit) != nil
+                ? defaults.integer(forKey: SettingsKeys.adHocSmileWeeklyLimit)
+                : defaultWeeklyLimit
+        }
+        set { UserDefaults.standard.set(newValue, forKey: SettingsKeys.adHocSmileWeeklyLimit) }
+    }
+
+    static var sentThisWeek: Int {
+        resetIfNewWeek()
+        return UserDefaults.standard.integer(forKey: SettingsKeys.adHocSmileCountThisWeek)
+    }
+
+    static var remainingThisWeek: Int {
+        max(0, cachedWeeklyLimit - sentThisWeek)
+    }
+
+    static func recordSend() {
+        resetIfNewWeek()
+        UserDefaults.standard.set(sentThisWeek + 1, forKey: SettingsKeys.adHocSmileCountThisWeek)
+    }
+
+    private static func resetIfNewWeek() {
+        let defaults = UserDefaults.standard
+        let calendar = Calendar.current
+        let thisWeekStart = calendar.dateInterval(of: .weekOfYear, for: .now)?.start ?? .now
+        let lastWeekStart = defaults.object(forKey: SettingsKeys.adHocSmileWeekStartDate) as? Date ?? .distantPast
+        guard lastWeekStart != thisWeekStart else { return }
+        defaults.set(0, forKey: SettingsKeys.adHocSmileCountThisWeek)
+        defaults.set(thisWeekStart, forKey: SettingsKeys.adHocSmileWeekStartDate)
     }
 }
