@@ -62,6 +62,7 @@ Question `id`s are stable across time budgets on purpose (e.g. `"morning.focus"`
 - `SmileService`: creates/accepts `CKShare`-backed Smile records — see "Smiles" below. `composeSentSmile(personName:message:senderName:context:)` is the one shared entry point for creating the local `Smile(direction: .sent)` record and preparing the `CKShare` link/message body — both `CheckInFlowView.sendSmile` (first send, from the composer) and `ReflectView.sendAnotherSmile` (one-click resend) call it rather than duplicating the CKShare logic. Add any future "send a smile" entry point through this same helper.
 - `PersistenceController`: the single `ModelContainer`, shared between the SwiftUI `App` and `AppDelegate` (which needs its own `ModelContext` to write incoming Smiles from outside the view tree, before any SwiftUI view even exists to hand it one via `@Environment`).
 - `DebugSeeding` (`#if DEBUG` only): populates ~2 weeks of realistic sample data through normal SwiftData saves — see "Dev scripts" below. Never runs unless launched with `--seed-sample-data`; a normal Xcode Debug run doesn't silently seed anything.
+- `DebugActions` (`#if DEBUG` only): one-off diagnostic actions behind their own launch flags, same mechanism as `DebugSeeding` but for isolated repro rather than sample data — currently just `--test-send-smile` (see the CloudKit gotcha below).
 
 ### Photo attachment — deliberately not Photos-library scanning
 

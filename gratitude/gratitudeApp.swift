@@ -17,6 +17,7 @@ struct gratitudeApp: App {
         UNUserNotificationCenter.current().delegate = NotificationDelegate.shared
         #if DEBUG
         DebugSeeding.run(context: ModelContext(PersistenceController.shared))
+        DebugActions.run(context: ModelContext(PersistenceController.shared))
         #endif
     }
 

@@ -1,6 +1,7 @@
 import Foundation
 import CloudKit
 import SwiftData
+import os
 
 /// Creates and accepts `CKShare`-backed "Smile" notes (a quick thank-you/
 /// kindness note sent to someone).
@@ -21,6 +22,8 @@ enum SmileService {
     private static let zoneName = "SmileZone"
     private static let recordType = "Smile"
     private static let container = CKContainer(identifier: "iCloud.com.sachabest.gratitude")
+    /// Surfaces errors the fallback paths below otherwise swallow silently.
+    private static let logger = Logger(subsystem: "com.sachabest.gratitude", category: "SmileService")
 
     struct PreparedShare {
         let url: URL
@@ -71,6 +74,7 @@ enum SmileService {
             context.insert(sent)
             try? context.save()
         } catch {
+            logger.error("prepareShare failed, sending plain-text smile with no link: \(error as NSError, privacy: .public)")
             let sent = Smile(direction: .sent, personName: personName, message: message)
             context.insert(sent)
             try? context.save()
@@ -88,7 +92,10 @@ enum SmileService {
             }
             container.add(operation)
         }
-        guard accepted, let rootRecordID = metadata.hierarchicalRootRecordID else { return nil }
+        guard accepted, let rootRecordID = metadata.hierarchicalRootRecordID else {
+            logger.error("acceptShare: CKAcceptSharesOperation did not succeed (accepted=\(accepted, privacy: .public))")
+            return nil
+        }
 
         do {
             let record = try await container.sharedCloudDatabase.record(for: rootRecordID)
@@ -96,6 +103,7 @@ enum SmileService {
             let senderName = record["senderName"] as? String ?? "Someone"
             return (senderName, message)
         } catch {
+            logger.error("acceptShare: failed to fetch shared record: \(error as NSError, privacy: .public)")
             return nil
         }
     }
