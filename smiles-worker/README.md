@@ -42,15 +42,14 @@ One-time manual setup, then automatic on every push:
 6. **Disable Bot Fight Mode / any JS challenge for this hostname** — Apple's
    and iMessage's fetchers aren't real browsers and can't pass a challenge;
    leaving one on silently breaks both the rich preview and Universal Links.
-7. Add a real 1200x630 branded image at `https://gratitude.sachabest.com/smile-card.png`
-   (a design asset, not code — host via Workers Static Assets, R2, or
-   Cloudflare Pages, whichever's least friction).
+7. The `og:image` (a simple branded 1200x630 card — the app's smile mark + "Gratitude" wordmark) is served at `/smile-card.jpg`, base64-embedded directly in `worker.js` (`SMILE_CARD_JPEG_BASE64`) — no separate asset storage needed, it deploys with the same `wrangler deploy` as everything else. To regenerate it (e.g. a real design pass later): `swift assets/generate-smile-card.swift smile-card.png` (renders at 1200x630 via AppKit/CoreGraphics, macOS only), convert to JPEG (`sips -s format jpeg -s formatOptions 82 smile-card.png --out smile-card.jpg`), base64-encode it (`base64 -i smile-card.jpg | tr -d '\n'`), and paste the result into `SMILE_CARD_JPEG_BASE64` in `worker.js`.
 
 ## Verifying independently of the app
 
 ```bash
 curl -s https://gratitude.sachabest.com/.well-known/apple-app-site-association
 curl -s "https://gratitude.sachabest.com/s?u=https://www.icloud.com/share/test&from=Test"
+curl -s -o /dev/null -w "%{http_code} %{content_type}\n" https://gratitude.sachabest.com/smile-card.jpg
 ```
 
 Both should work without ever touching Xcode or a real Smile — the Worker

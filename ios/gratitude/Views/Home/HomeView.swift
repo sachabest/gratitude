@@ -12,6 +12,7 @@ struct HomeView: View {
     @AppStorage(SettingsKeys.morningWindowEnd) private var morningWindowEnd = CheckInWindowDefaults.morningEnd
     @AppStorage(SettingsKeys.eveningWindowStart) private var eveningWindowStart = CheckInWindowDefaults.eveningStart
     @AppStorage(SettingsKeys.eveningWindowEnd) private var eveningWindowEnd = CheckInWindowDefaults.eveningEnd
+    @AppStorage(SettingsKeys.hasCompletedOnboarding) private var hasCompletedOnboarding = false
 
     @State private var path = NavigationPath()
     @State private var selectedDate = Calendar.current.startOfDay(for: .now)
@@ -113,13 +114,19 @@ struct HomeView: View {
             .sheet(isPresented: $showCalendar) {
                 CalendarPickerView(selectedDate: $selectedDate, checkIns: checkIns)
             }
-            .fullScreenCover(item: Binding(get: { unseenSmiles.first }, set: { _ in })) { smile in
+            .fullScreenCover(item: Binding(get: { hasCompletedOnboarding ? unseenSmiles.first : nil }, set: { _ in })) { smile in
                 SmileReceivedView(
                     smile: smile,
                     additionalUnseenCount: max(0, unseenSmiles.count - 1)
                 ) {
                     smile.hasBeenSeen = true
                     try? modelContext.save()
+                    autoLaunchIfNeeded()
+                }
+            }
+            .fullScreenCover(isPresented: Binding(get: { !hasCompletedOnboarding }, set: { _ in })) {
+                OnboardingView {
+                    hasCompletedOnboarding = true
                     autoLaunchIfNeeded()
                 }
             }
@@ -264,11 +271,13 @@ struct HomeView: View {
 
     private func autoLaunchIfNeeded() {
         guard !hasAutoLaunched else { return }
-        // A freshly-received smile takes priority — don't let the check-in
-        // flow's sheet and SmileReceivedView's fullScreenCover fight over
-        // the same presentation slot. Deliberately doesn't set
-        // hasAutoLaunched here, so this re-runs (via the fullScreenCover's
-        // onDismiss below) once the smile's been acknowledged.
+        // The first-launch intro and a freshly-received smile both take
+        // priority — don't let the check-in flow's sheet fight either of
+        // those fullScreenCovers for the same presentation slot.
+        // Deliberately doesn't set hasAutoLaunched here, so this re-runs
+        // (via OnboardingView's/SmileReceivedView's onFinish below) once
+        // whichever's showing has been dismissed.
+        guard hasCompletedOnboarding else { return }
         guard unseenSmiles.isEmpty else { return }
         hasAutoLaunched = true
 

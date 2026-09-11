@@ -23,6 +23,8 @@ enum SettingsKeys {
     static let adHocSmileWeeklyLimit = "adHocSmileWeeklyLimit"
     static let adHocSmileCountThisWeek = "adHocSmileCountThisWeek"
     static let adHocSmileWeekStartDate = "adHocSmileWeekStartDate"
+    /// Whether `OnboardingView` has been shown and dismissed/skipped once.
+    static let hasCompletedOnboarding = "hasCompletedOnboarding"
 }
 
 enum CheckInWindowDefaults {
