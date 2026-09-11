@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import MessageUI
 
 /// Send a smile anytime — not just tagged during an evening check-in.
 /// Rate-limited per calendar week (`AdHocSmileLimiter`) so it stays an
@@ -73,7 +74,7 @@ struct AdHocSmileComposerView: View {
             .alert("Messages isn't available", isPresented: $showMessagingUnavailableAlert) {
                 Button("OK", role: .cancel) { dismiss() }
             } message: {
-                Text("Your smile was saved, but this device can't send text messages, so it wasn't sent yet.")
+                Text("This device can't send text messages, so your smile wasn't sent.")
             }
         }
     }
@@ -92,22 +93,19 @@ struct AdHocSmileComposerView: View {
         let finalMessage = message
 
         Task {
-            let body = await SmileService.composeSentSmile(
-                personName: contactName,
-                message: finalMessage,
-                senderName: senderName,
-                context: modelContext
-            )
-            AdHocSmileLimiter.recordSend()
-            remainingThisWeek = AdHocSmileLimiter.remainingThisWeek
+            let prepared = await SmileService.prepareMessage(message: finalMessage, senderName: senderName, recipientPhoneNumber: phoneNumber)
             isSending = false
 
-            let presenter = MessageComposePresenter { _ in
+            let presenter = MessageComposePresenter { result in
                 messagePresenter = nil
+                guard result == .sent else { return }
+                SmileService.recordSent(personName: contactName, message: finalMessage, cloudRecordName: prepared.cloudRecordName, context: modelContext)
+                AdHocSmileLimiter.recordSend()
+                remainingThisWeek = AdHocSmileLimiter.remainingThisWeek
                 Haptic.success()
                 dismiss()
             }
-            if presenter.present(recipients: [phoneNumber], body: body) {
+            if presenter.present(recipients: [phoneNumber], body: prepared.body) {
                 messagePresenter = presenter
             } else {
                 showMessagingUnavailableAlert = true

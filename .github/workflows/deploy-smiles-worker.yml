@@ -1,0 +1,28 @@
+name: Deploy Smiles Worker
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "smiles-worker/**"
+      - ".github/workflows/deploy-smiles-worker.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-smiles-worker-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Deploy to Cloudflare Workers
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          workingDirectory: smiles-worker

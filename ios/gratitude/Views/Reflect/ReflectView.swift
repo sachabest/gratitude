@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import MessageUI
 
 struct ReflectView: View {
     @Environment(\.modelContext) private var modelContext
@@ -48,7 +49,7 @@ struct ReflectView: View {
         .alert("Messages isn't available", isPresented: $showMessagingUnavailableAlert) {
             Button("OK", role: .cancel) {}
         } message: {
-            Text("Your smile was saved, but this device can't send text messages, so it wasn't sent yet.")
+            Text("This device can't send text messages, so your smile wasn't sent.")
         }
     }
 
@@ -140,20 +141,17 @@ struct ReflectView: View {
         let senderName = UserProfile.displayName
 
         Task {
-            let body = await SmileService.composeSentSmile(
-                personName: personName,
-                message: message,
-                senderName: senderName,
-                context: modelContext
-            )
+            let prepared = await SmileService.prepareMessage(message: message, senderName: senderName, recipientPhoneNumber: phoneNumber)
 
             isSendingSmile = false
 
-            let presenter = MessageComposePresenter { _ in
+            let presenter = MessageComposePresenter { result in
                 messagePresenter = nil
+                guard result == .sent else { return }
+                SmileService.recordSent(personName: personName, message: message, cloudRecordName: prepared.cloudRecordName, context: modelContext)
                 Haptic.success()
             }
-            if presenter.present(recipients: [phoneNumber], body: body) {
+            if presenter.present(recipients: [phoneNumber], body: prepared.body) {
                 messagePresenter = presenter
             } else {
                 showMessagingUnavailableAlert = true

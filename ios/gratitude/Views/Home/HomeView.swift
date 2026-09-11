@@ -3,7 +3,10 @@ import SwiftData
 
 struct HomeView: View {
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.modelContext) private var modelContext
     @Query(sort: \CheckIn.date, order: .reverse) private var checkIns: [CheckIn]
+    @Query(filter: #Predicate<Smile> { $0.hasBeenSeen == false }, sort: \Smile.date, order: .reverse)
+    private var unseenSmiles: [Smile]
 
     @AppStorage(SettingsKeys.morningWindowStart) private var morningWindowStart = CheckInWindowDefaults.morningStart
     @AppStorage(SettingsKeys.morningWindowEnd) private var morningWindowEnd = CheckInWindowDefaults.morningEnd
@@ -109,6 +112,16 @@ struct HomeView: View {
             }
             .sheet(isPresented: $showCalendar) {
                 CalendarPickerView(selectedDate: $selectedDate, checkIns: checkIns)
+            }
+            .fullScreenCover(item: Binding(get: { unseenSmiles.first }, set: { _ in })) { smile in
+                SmileReceivedView(
+                    smile: smile,
+                    additionalUnseenCount: max(0, unseenSmiles.count - 1)
+                ) {
+                    smile.hasBeenSeen = true
+                    try? modelContext.save()
+                    autoLaunchIfNeeded()
+                }
             }
             .task {
                 autoLaunchIfNeeded()
@@ -251,6 +264,12 @@ struct HomeView: View {
 
     private func autoLaunchIfNeeded() {
         guard !hasAutoLaunched else { return }
+        // A freshly-received smile takes priority — don't let the check-in
+        // flow's sheet and SmileReceivedView's fullScreenCover fight over
+        // the same presentation slot. Deliberately doesn't set
+        // hasAutoLaunched here, so this re-runs (via the fullScreenCover's
+        // onDismiss below) once the smile's been acknowledged.
+        guard unseenSmiles.isEmpty else { return }
         hasAutoLaunched = true
 
         let period: Period?

@@ -32,7 +32,7 @@ jobs:
       - name: Build
         run: |
           xcodebuild \
-            -project gratitude.xcodeproj \
+            -project ios/gratitude.xcodeproj \
             -scheme gratitude \
             -destination 'platform=iOS Simulator,name=iPhone 17' \
             CODE_SIGNING_ALLOWED=NO \

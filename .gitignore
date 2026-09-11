@@ -4,5 +4,5 @@ DerivedData/
 *.xcuserstate
 
 # Local dev tooling (idb, installed via uv — see README). The venv itself is
-# disposable and reproduced from tools/idb/uv.lock; the lockfile is tracked.
-tools/idb/.venv/
+# disposable and reproduced from mcp/idb/uv.lock; the lockfile is tracked.
+mcp/idb/.venv/

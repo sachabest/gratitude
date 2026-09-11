@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import PhotosUI
+import MessageUI
 
 struct CheckInFlowView: View {
     let period: Period
@@ -65,7 +66,7 @@ struct CheckInFlowView: View {
                 dismiss()
             }
         } message: {
-            Text("Your smile was saved, but this device can't send text messages, so it wasn't sent yet.")
+            Text("This device can't send text messages, so your smile wasn't sent.")
         }
     }
 
@@ -252,21 +253,19 @@ struct CheckInFlowView: View {
         let message = smileMessage
 
         Task {
-            let body = await SmileService.composeSentSmile(
-                personName: contactName,
-                message: message,
-                senderName: senderName,
-                context: modelContext
-            )
+            let prepared = await SmileService.prepareMessage(message: message, senderName: senderName, recipientPhoneNumber: phoneNumber)
 
             isPreparingSmile = false
 
-            let presenter = MessageComposePresenter { _ in
+            let presenter = MessageComposePresenter { result in
                 messagePresenter = nil
-                Haptic.success()
+                if result == .sent {
+                    SmileService.recordSent(personName: contactName, message: message, cloudRecordName: prepared.cloudRecordName, context: modelContext)
+                    Haptic.success()
+                }
                 dismiss()
             }
-            if presenter.present(recipients: [phoneNumber], body: body) {
+            if presenter.present(recipients: [phoneNumber], body: prepared.body) {
                 messagePresenter = presenter
             } else {
                 showMessagingUnavailableAlert = true

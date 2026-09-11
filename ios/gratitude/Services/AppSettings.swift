@@ -23,9 +23,6 @@ enum SettingsKeys {
     static let adHocSmileWeeklyLimit = "adHocSmileWeeklyLimit"
     static let adHocSmileCountThisWeek = "adHocSmileCountThisWeek"
     static let adHocSmileWeekStartDate = "adHocSmileWeekStartDate"
-    /// Cached copy of `AppConfigService`'s remote `installLinkURL`. See
-    /// `SmileInstallLink` below.
-    static let smileInstallLinkURL = "smileInstallLinkURL"
 }
 
 enum CheckInWindowDefaults {
@@ -129,25 +126,5 @@ enum AdHocSmileLimiter {
         guard lastWeekStart != thisWeekStart else { return }
         defaults.set(0, forKey: SettingsKeys.adHocSmileCountThisWeek)
         defaults.set(thisWeekStart, forKey: SettingsKeys.adHocSmileWeekStartDate)
-    }
-}
-
-/// An optional app-install link, appended to a smile's message only when
-/// `SmileService.composeSentSmile` fell back to plain text (the `CKShare`
-/// failed to create) — the one moment the recipient's message has no
-/// working "open in Gratitude" link at all, so pointing them at how to get
-/// the app is the next best thing. Comes from `AppConfigService`'s
-/// `AppConfig-main` public record (`installLinkURL`); nil/empty until set,
-/// so nothing broken gets sent by default. Point this at a TestFlight
-/// public link today, swap to a real App Store link once the app ships
-/// there — no build needed either time.
-enum SmileInstallLink {
-    static var cachedURL: String? {
-        get {
-            let stored = UserDefaults.standard.string(forKey: SettingsKeys.smileInstallLinkURL)
-            let trimmed = stored?.trimmingCharacters(in: .whitespacesAndNewlines)
-            return (trimmed?.isEmpty == false) ? trimmed : nil
-        }
-        set { UserDefaults.standard.set(newValue, forKey: SettingsKeys.smileInstallLinkURL) }
     }
 }
